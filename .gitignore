@@ -1,18 +1,31 @@
-# Build tools and machine-local configuration
+# Gradle / Kotlin / Android generated files
 .gradle/
 .kotlin/
 **/build/
+.externalNativeBuild/
+.cxx/
+
+# IDE and machine-specific configuration
 .idea/
 *.iml
 local.properties
 .DS_Store
-.externalNativeBuild/
-.cxx/
-# Credentials and signing material
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# archived old docs
+/doc_archive
+
+
+# Signing material and secrets (never commit these)
 .env
 .env.*
+!.env.example
 *.jks
 *.keystore
+*.jceks
 *.p12
 *.pfx
 *.pem
@@ -20,7 +33,15 @@ local.properties
 keystore.properties
 signing.properties
 credentials*.json
-# Personal device evidence, rig exports and transient reports: opt in docs only
+
+# Android distribution files belong on GitHub Releases, not in Git
+*.apk
+*.aab
+*.apks
+*.idsig
+
+# Personal device evidence, rig exports and transient reports
+# Migration reports are safe, explicitly approved exceptions.
 /validation/**
 !/validation/MIGRATION_AUDIT.md
 !/validation/MIGRATION_RESULTS.md
@@ -29,4 +50,7 @@ credentials*.json
 *.tmp
 *.bak
 *.backup
+
+# Local Python helper caches (if any)
 __pycache__/
+*.pyc
