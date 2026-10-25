@@ -1,0 +1,11 @@
+{
+  "safety_intro": "This solver uses simplified mechanical models and the principle of energy conservation to estimate webbing stretch and maximum sag following a mainline failure.",
+  "safety_estimates": "The results are theoretical estimates, not experimentally verified predictions.",
+  "safety_real_world": "Real-world behavior can differ significantly due to dynamic effects, friction, material variability, connection behavior and other mechanisms not fully represented in the model.",
+  "safety_energy": "Conservation of energy provides a maximum-deflection estimate within the assumptions of the implemented model. It does not guarantee an absolute upper bound for sag or forces in a real failure event.",
+  "safety_decisions": "This software does not guarantee that a highline setup is safe and must not be used as the sole basis for rigging or safety decisions.",
+  "safety_risk": "Highlining involves serious risks of injury or death.",
+  "safety_own_risk": "Highline at your own risk.",
+  "safety_acknowledgment": "By selecting Accept and Continue, the user acknowledges these limitations.",
+  "safety_accept": "Accept and Continue"
+}

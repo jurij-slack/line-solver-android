@@ -1,0 +1,20 @@
+{
+  "snapshot_date": "2026-10-25",
+  "source_project": "line_solver (independent Python reference project)",
+  "source_commit": null,
+  "source_version_note": "No usable Git metadata at migration; content identity is SHA-256.",
+  "files": {
+    "data/materials/webbing_material_models_v1.json": {
+      "source_path": "data/materials/webbing_material_models_v1.json",
+      "sha256": "57de2e9012dde5522e1080e3de239da1ade70ab2c14f98a3d2c185324f3b5edf"
+    },
+    "data/materials/webbings.json": {
+      "source_path": "data/materials/webbings.json",
+      "sha256": "fb54142e0a844579646c88925b3e1c8d2a781efc80da22c8250aaab20812245a"
+    },
+    "data/materials/phase6_connector_research/connector_specs_research.json": {
+      "source_path": "data/materials/phase6_connector_research/connector_specs_research.json",
+      "sha256": "76a3f8599db71877fe33ce717e7c9fcfa14552d096070159a17cd0167f6855da"
+    }
+  }
+}

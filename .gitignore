@@ -1,0 +1,32 @@
+# Build tools and machine-local configuration
+.gradle/
+.kotlin/
+**/build/
+.idea/
+*.iml
+local.properties
+.DS_Store
+.externalNativeBuild/
+.cxx/
+# Credentials and signing material
+.env
+.env.*
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+keystore.properties
+signing.properties
+credentials*.json
+# Personal device evidence, rig exports and transient reports: opt in docs only
+/validation/**
+!/validation/MIGRATION_AUDIT.md
+!/validation/MIGRATION_RESULTS.md
+*.hprof
+*.log
+*.tmp
+*.bak
+*.backup
+__pycache__/

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "manufacturer_aliases": {
+    "BalanceCommunity": "Balance Community",
+    "Balance Community: Slackline Outfitters": "Balance Community",
+    "Elephant": "Elephant Slacklines",
+    "Raed Slacklines": "RAED",
+    "Slack house": "Slackhouse",
+    "SlackMountain": "Slack Mountain",
+    "Slackliner.de": "Sigma / slackliner.de",
+    "Equilibrium Slacklines (EQB)": "Equilibrium"
+  },
+  "records": {
+    "10": {"name":"Aero 2", "target":"balance_community__aero2", "reason":"Spacing alias: Aero 2 / Aero2; same manufacturer and generation."},
+    "16": {"name":"Mantra MK4 Flight", "target":"balance_community__mantra_mk4", "reason":"Same MK4 generation and manufacturer product URL; Flight is the source name."},
+    "24": {"name":"Bluewing", "review":["Conflicting historical elongation specifications: 2012, 2014 and current-page figures in source notes; no production version established."]},
+    "52": {"name":"Cosmic", "target":"spider_slacklines__cosmic", "reason":"Slack Inov / Spider joint datasheet named in source notes; exact Cosmic product."},
+    "54": {"name":"Nova", "target":"spider_slacklines__rodeo", "reason":"Source notes explicitly identify RODEO LINE NOVA and the removed Rodeo duplicate.", "review":["Historical NOVA withdrawal from highline use in retained material audit; source branding/strength does not resolve that restriction."], "restrictions":["Historical NOVA was withdrawn from highline use; applicability to RODEO LINE NOVA requires review (android/doc_archive/MATERIAL_DATABASE_AUDIT.md)."]},
+    "58": {"name":"MOTM", "review":["Retained series gives 11.5% at 5 kN; manual quoted in notes gives 14.3%. Different production versions are conjecture, not confirmed batches."]},
+    "70": {"name":"Zao", "warnings":["Only the supplied 1–20 kN series is modeled. Notes identify a separate higher-load test run; its points are absent and are not reconstructed or pooled."]},
+    "119": {"name":"Sigma Impact LS", "ambiguous":["sigma_slackliner_de__sigma_impact_low_stretch"], "reason":"LS may denote an earlier version: supplied 64 g/m, 37 kN versus curated 59 g/m, 32 kN. Identity requires review."},
+    "123": {"name":"Rubber Band MKIII SOL", "target":"slackhouse__rubber_band_sol", "reason":"Curated expanded_v2_curation names Rubber Band SOL MK III explicitly."},
+    "159": {"name":"Plasma", "target":"spider_slacklines__plasma", "reason":"Slack Inov / Spider joint datasheet named in source notes; exact Plasma product."},
+    "166": {"name":"Joker", "target":"spider_slacklines__joker", "reason":"Slack Inov / Spider joint datasheet named in source notes; exact Joker product."},
+    "182": {"name":"Abysses Bounce", "target":"spider_slacklines__abysses", "reason":"Source notes explicitly identify ABYSSES and the removed Abysses duplicate."},
+    "193": {"name":"ReBL", "target":"sigma_slackliner_de__sigma_rebl", "reason":"ReBL / Sigma ReBL manufacturer-prefix alias, same source brand."},
+    "198": {"name":"Jelly", "target":"balance_community__jelly_webbing", "reason":"Source product URL identifies jelly-webbing; distinct from Jelly PRO."},
+    "215": {"name":"Jelly PRO Desert", "ambiguous":["balance_community__jelly_pro"], "reason":"Source explicitly distinguishes Classic and Desert; legacy Jelly PRO has no colourway identity. Do not merge or duplicate its curve."},
+    "230": {"name":"Jelly PRO Classic", "ambiguous":["balance_community__jelly_pro"], "reason":"Source explicitly distinguishes Classic and Desert; legacy Jelly PRO has no colourway identity. Do not merge or duplicate its curve."},
+    "232": {"name":"Xiui T1", "review":["Source notes say 8–10% range at 10 kN; stored 9% is an upstream averaged midpoint, not one reported measurement."]},
+    "234": {"name":"Tiger", "warnings":["Manufacturer prose and table differ; source retains table 1.9/2.8% and notes prose 2.4/2.9%. Existing curated model remains authoritative."]},
+    "247": {"name":"Jumanji", "target":"slack_inov__jumanji", "reason":"Same product and Slack Inov / Spider joint datasheet; retained curated one-point model wins."},
+    "250": {"name":"Solid", "target":"spider_slacklines__solid", "reason":"Slack Inov / Spider joint datasheet named in source notes; exact Solid product."},
+    "251": {"name":"Donkey 20", "warnings":["Width inferred upstream from product name; no mass or MBS published. No product URL or measurement protocol."]},
+    "253": {"name":"Steel Cable", "nominal_mbs":false, "reason":"Source breakingStrength is looped/terminated strength, explicitly not raw band strength.", "strengths":[{"termination":"sewn loops, complete supplied line", "strength_n":27000}]},
+    "257": {"name":"2FACES", "nominal_mbs":false, "reason":"23.7 kN applies to batch 2020; the approximate stretch point has no confirmed batch association.", "batch":{"code":"2020", "mbs_n":23700}, "strengths":[{"termination":"sewn main loop", "strength_n":23000}], "warnings":["Park/longline marketing and an upstream derived Not for Highline classification are not an explicit manufacturer prohibition. No highline approval inferred."]},
+    "259": {"name":"Duct Tape", "nominal_mbs":false, "reason":"Source breakingStrength is looped/terminated strength, explicitly not raw band strength.", "strengths":[{"termination":"sewn loops, complete supplied line", "strength_n":13000}]},
+    "261": {"name":"Axiom MK2", "batch":{"code":"W26DZ", "date":"2026-08", "mbs_n":39930, "sewn_loop_n":46850}, "strengths":[{"termination":"nominal sewn loop, Pattern 504", "strength_n":46000}], "restrictions":["Not compatible with weblocks except MightyLock on Van Beest 1/2 inch 2-tonne shackle, double wrapped, pin side. No webbing grips. Sewn loops need a soft thimble under soft connectors."], "warnings":["Nominal 39 kN is separate from W26DZ batch 39.93 kN and 46.85 kN sewn-loop tests. ISA stretch points have no confirmed batch association. Manufacturer highline approval is not an ISA certification."]},
+    "262": {"name":"Bella Ciao", "nominal_mbs":false, "reason":"26 kN is a Tricklock-specific rating, not nominal bare-webbing strength.", "strengths":[{"termination":"Tricklock", "strength_n":26000},{"termination":"Tricklock, two wraps", "strength_n":29500}]},
+    "263": {"name":"TWTMNBN (The Webbing That Must Not Be Named)", "same_source_product":1, "reason":"Notes explicitly identify Raed resale of Landcruising Core 2 HS and a curve copied from source row 1.", "warnings":["Reseller graphic 45 kN / 72 g/m differs from table 44 kN / 71.5 g/m; keep both as evidence, not overrides."]}
+  }
+}

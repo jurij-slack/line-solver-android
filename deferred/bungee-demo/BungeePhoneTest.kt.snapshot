@@ -1,0 +1,95 @@
+package org.linesolver.base
+
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.lifecycle.ViewModelProvider
+import org.junit.Assert.*
+import org.junit.Rule
+import org.junit.Test
+import org.linesolver.base.material.catalogue.*
+import org.linesolver.base.model.*
+import org.linesolver.base.ui.SetupViewModel
+
+/** Run only after an external backup of current app data. No clears/uninstalls. */
+class BungeePhoneTest {
+    @get:Rule val rule=createAndroidComposeRule<MainActivity>()
+    private fun click(tag:String)=rule.onNodeWithTag(tag).performSemanticsAction(SemanticsActions.OnClick){it()}
+    private fun scroll(tag:String)=rule.onNodeWithTag(tag).performScrollTo()
+    private fun field(tag:String,value:String)=rule.onNodeWithTag(tag).performScrollTo().performTextReplacement(value)
+    @Test fun configureValidatePersistAndRemoveIndependentBungee() {
+        rule.acceptSafetyIfShown()
+        lateinit var vm:SetupViewModel
+        rule.activityRule.scenario.onActivity{vm=ViewModelProvider(it)[SetupViewModel::class.java]}
+        val original=vm.state.value.draft;val originalEdit=vm.materialEdit;val originalPackage=vm.materialStore.value
+        val savedRigs=vm.library.value.rigs
+        try {
+            rule.runOnIdle {
+                vm.editMaterial(MaterialEdit(name="Synthetic phone bungee fixture",brand="Phone fixture",category=ProductCategory.bungee,
+                    bungee=BungeeLaw(basis=BungeeBasis.physical_cord,testedPhysicalLengthM=2.0,totalMassKg=1.0,source="Synthetic phone fixture only",idealEqualLegs=true),
+                    source="Synthetic fixture; no experimental evidence",table="1,100\n3,200"))
+                vm.saveMaterial()
+            }
+            rule.waitUntil(20000){!vm.materialBusy && vm.materialStore.value.catalogue.models.size==originalPackage.catalogue.models.size+1}
+            val record=vm.materialStore.value.catalogue.models.last();val repo=vm.materials as CatalogueMaterialRepository
+            val m=repo.webbings("RAED").first{it.product=="Parsec"};val sel=Selection(m.manufacturer,m.id)
+            rule.runOnIdle { vm.edit { Draft(showBungeeOptions=true,kind=SetupKind.UNIFORM,span="20",leftHeight="0",rightHeight="0",mass="80",position="5",pretensionKn="1",uniform=UniformGenerator(count="2",main=sel,backup=sel,extra="50"),sections=emptyList()) } }
+            scroll("add-right-bungee");click("add-right-bungee")
+            field("bungee-rest","0");field("bungee-source","Synthetic measured instance")
+            // Selection itself is tested by the real dropdown labels.
+            rule.onNodeWithText("Exact model: Choose").performScrollTo().performClick()
+            rule.onNode(hasText("${repo.get(record.id).name} · revision ${record.revision}") and hasClickAction()).performClick()
+            click("save-bungee")
+            rule.onNodeWithTag("bungee-form-error").assertExists()
+            field("bungee-rest","2");field("bungee-legs","2");field("bungee-limit","4")
+            click("save-bungee")
+            rule.waitUntil(10000){vm.state.value.draft.bungees?.banks?.size==1}
+            val a=vm.state.value.draft.bungees!!.banks.single().assemblies.single()
+            assertEquals(2,a.equalLegs);assertEquals(record.reference(),a.model)
+            assertEquals(SetupKind.MIXED,vm.state.value.draft.kind)
+            assertEquals(2,vm.state.value.draft.activeSections.size)
+            assertEquals(a,vm.state.value.draft.bungees!!.banks.single().assemblies.single())
+            rule.onNodeWithText("Add independent parallel assembly").performScrollTo().performClick()
+            rule.onNodeWithText("Exact model: Choose").performScrollTo().performClick()
+            rule.onNode(hasText("${repo.get(record.id).name} · revision ${record.revision}") and hasClickAction()).performClick()
+            field("bungee-rest","2");field("bungee-source","Second physical cord fixture");click("save-bungee")
+            rule.waitUntil(10000){vm.state.value.draft.bungees!!.banks.single().assemblies.size==2}
+            val siblings=vm.state.value.draft.bungees!!.banks.single().assemblies
+            assertEquals(a,siblings.first());assertEquals(1,siblings.last().equalLegs);assertNull(siblings.last().limiterPhysicalLengthM)
+            val encoded=RigLibraryCodec.encode(RigLibraryDocument(rigs=listOf(SavedRig("fixture","Temporary serialization fixture",1,RigConfiguration.from(vm.state.value.draft)))))
+            assertEquals(siblings,RigLibraryCodec.decode(encoded).rigs.single().configuration.bungees!!.banks.single().assemblies)
+            rule.activityRule.scenario.recreate();rule.waitForIdle()
+            rule.activityRule.scenario.onActivity{vm=ViewModelProvider(it)[SetupViewModel::class.java]}
+            assertEquals(siblings,vm.state.value.draft.bungees!!.banks.single().assemblies)
+            scroll("bungee-bank-0");rule.onNodeWithTag("bungee-bank-0").assertTextContains("weblock stop",substring=true)
+            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()?.let { bitmap ->
+                java.io.File(rule.activity.getExternalFilesDir(null),"phase04-bungee-editor.png").outputStream().use {
+                    bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)
+                }
+                bitmap.recycle()
+            }
+            rule.onAllNodesWithText("Edit / move assembly")[0].performScrollTo().performClick()
+            field("bungee-source","Verified edited fixture source")
+            rule.onNodeWithText("Placement: series right").performScrollTo().performClick()
+            rule.onNode(hasText("series before") and hasClickAction()).performClick()
+            rule.onNodeWithText("Section: Choose").performScrollTo().performClick()
+            rule.onNode(hasText("Section 2") and hasClickAction()).performClick()
+            click("save-bungee")
+            rule.waitUntil(10000){vm.state.value.draft.bungees!!.banks.single().placement==BungeePlacement.series_before}
+            val moved=vm.state.value.draft.bungees!!.banks.single()
+            assertEquals(vm.state.value.draft.activeSections[1].id,moved.sectionId)
+            assertEquals(siblings.last(),moved.assemblies.last())
+            assertEquals("Verified edited fixture source",moved.assemblies.first().source)
+            rule.onAllNodesWithText("Remove assembly")[0].performScrollTo().performClick()
+            rule.waitUntil(10000){vm.state.value.draft.bungees!!.banks.single().assemblies.size==1}
+            rule.onNodeWithText("Remove assembly").performScrollTo().performClick()
+            rule.waitUntil(10000){vm.state.value.draft.bungees!!.banks.isEmpty()}
+            assertEquals(savedRigs,vm.library.value.rigs)
+        } finally {
+            rule.runOnIdle {
+                vm.materialStore.commit(originalPackage)
+                vm.editMaterial(originalEdit);vm.edit{original}
+            }
+        }
+    }
+}

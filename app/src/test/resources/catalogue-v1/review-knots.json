@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "products": [{"id":"example:review","category":"webbing","manufacturer":null,"name":"Synthetic contradictory data"}],
+  "datasets": [{
+    "id":"example:unsorted-series",
+    "product_id":"example:review",
+    "source":{"citation":"Synthetic malformed source; preserve order for review"},
+    "raw_data_status":"raw",
+    "points":[
+      {"strain":0.02,"force_n":2000,"origin":"measured"},
+      {"strain":0.01,"force_n":1000,"origin":"measured"}
+    ]
+  }]
+}

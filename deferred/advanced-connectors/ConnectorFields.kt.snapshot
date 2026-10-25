@@ -1,0 +1,106 @@
+package org.linesolver.base.ui
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
+import org.linesolver.base.model.*
+import java.util.UUID
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable fun ConnectorFields(h:HardwareItem,j:StructuralJoint,vm:SetupViewModel,advanced:Boolean=true,onRemove:(()->Unit)?=null,change:(HardwareItem)->Unit) {
+    val spec=runCatching{ConnectorLibrary.resolve(h)}.getOrNull()
+    var select by remember(h.id){mutableStateOf(false)}
+    var custom by remember(h.id){mutableStateOf(false)}
+    var query by remember{mutableStateOf("")}
+    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+        OutlinedButton(onClick={select=true},modifier=Modifier.weight(1f).testTag("choose-connector-${h.id}")){Text(spec?.let(::connectorListLabel) ?: "Choose connector specification")}
+        if(onRemove!=null)TextButton(onClick=onRemove,modifier=Modifier.testTag("remove-${h.id}")){Text("Remove")}
+    }
+    if(advanced) {
+    spec?.let { s ->
+        Text("${s.manufacturer} · article ${s.article ?: "unspecified"} · ${s.ratedConfiguration} · ${s.size} · m/g=${s.massKg?.times(1000) ?: "unknown"}")
+        Text("MBS/kN=${s.mbsN?.div(1000) ?: "unknown"} · BL/kN=${s.blN?.div(1000) ?: "unknown"} · lower bound/kN=${s.mbsLowerBoundN?.div(1000) ?: "unknown"}")
+        Text("WLL/kN=${s.wllN?.div(1000) ?: "unknown"} · certified claim/kN=${s.certifiedClaimN?.div(1000) ?: "unknown"} · ${s.certification}")
+        Text("${s.origin} · ${s.testBasis}\n${s.restrictions}\n${s.uncertainty}")
+        val uri=LocalUriHandler.current
+        if(s.sourceUrl.startsWith("https://"))TextButton(onClick={uri.openUri(s.sourceUrl)}){Text("Manufacturer source")}
+        else Text("Specification source: ${s.sourceUrl}")
+        Row { Checkbox(h.ratedInstallationConfirmed,{change(h.copy(ratedInstallationConfirmed=it))},modifier=Modifier.testTag("confirm-rated-${h.id}"));Text("Exact rated wrap, loading direction and contact conditions confirmed") }
+    }
+    Text("Role (all webbing ends remain on the common node)")
+    HardwareRole.entries.chunked(2).forEach{row->FlowRow { row.forEach{r->FilterChip(h.role==r,{change(h.copy(role=r))},label={Text(r.name)},modifier=Modifier.testTag("role-${h.id}-${r.name}"))} }}
+    for(failed in listOf(false,true)) {
+        val assumption=if(failed)h.failedLoad else h.standingLoad
+        Text(if(h.role==HardwareRole.backup)"Backup connector loaded?" else "Connector loaded?")
+        Text(if(failed)"Mainline failed / backup engaged (Catch and Rest)" else "Intact / Standing")
+        Row { HardwareLoad.entries.forEach { status ->
+            FilterChip(assumption.status==status,{val next=assumption.copy(status=status,source="user assumption");change(if(failed)h.copy(failedLoad=next) else h.copy(standingLoad=next))},
+                label={Text(when(status){HardwareLoad.loaded->"Yes";HardwareLoad.unloaded->"No";HardwareLoad.unknown->"Unknown"})},modifier=Modifier.testTag("load-${h.id}-${if(failed)"failed" else "standing"}-${status.name}"))
+        } }
+        OutlinedTextField(assumption.note,{val next=assumption.copy(note=it,source="user assumption");change(if(failed)h.copy(failedLoad=next) else h.copy(standingLoad=next))},label={Text("State assumption / source notes")})
+    }
+    Text("Loaded status is a user assumption, not a solved hardware force or a disconnected backup. Multiple pieces have unknown sharing; ratings are never summed.",style=MaterialTheme.typography.bodySmall)
+    }
+    if(advanced)TextButton(onClick={custom=true}){Text(if(spec?.origin==SpecificationOrigin.user_declared)"Create custom revision" else "New custom connector")}
+    if(select)AlertDialog(modifier=Modifier.imePadding(),onDismissRequest={select=false},title={Text("Connector catalogue")},text={Column {
+        OutlinedTextField(query,{query=it},label={Text("Search exact products/configurations")},singleLine=true,modifier=Modifier.fillMaxWidth())
+        TextButton(onClick={select=false;custom=true}){Text(if(spec?.origin==SpecificationOrigin.user_declared)"Create custom revision" else "New custom connector")}
+        val customChoices=(vm.customConnectors+listOfNotNull(spec?.takeIf{it.origin==SpecificationOrigin.user_declared})).distinctBy{it.id to it.revision}
+        LazyColumn(Modifier.weight(1f,fill=false).heightIn(max=330.dp).testTag("connector-catalogue-list")) {
+            ConnectorGroup.entries.forEach { group ->
+                item(key="group-${group.name}"){Text(group.title,style=MaterialTheme.typography.titleSmall,modifier=Modifier.testTag("connector-group-${group.name}"))}
+                val matches=ConnectorLibrary.choices(j,customChoices).filter{connectorGroup(it)==group && connectorMatches(it,query)}
+                if(matches.isEmpty())item(key="empty-${group.name}"){Text("No matching connectors",style=MaterialTheme.typography.bodySmall)}
+                items(matches,key={it.id+it.revision}) { s ->
+                    TextButton(onClick={change(h.copy(productId=s.id,revision=s.revision,specification=s,fingerprint=s.identity(),ratedInstallationConfirmed=false));select=false},modifier=Modifier.fillMaxWidth().testTag("connector-option-${s.id}")) {
+                        Column(Modifier.fillMaxWidth()) {
+                            Text(connectorListLabel(s))
+                            Text(s.manufacturer+(s.article?.let{" · $it"} ?: "")+if(s.origin==SpecificationOrigin.user_declared)" · user declared" else "",style=MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+        }
+        vm.connectorStore.readError?.let{Text(it,color=MaterialTheme.colorScheme.error)}
+    }},confirmButton={TextButton(onClick={select=false}){Text("Close catalogue")}})
+    if(custom)CustomConnectorDialog(spec?.takeIf{it.origin==SpecificationOrigin.user_declared},j,vm,{s->change(h.copy(productId=s.id,revision=s.revision,specification=s,fingerprint=s.identity(),ratedInstallationConfirmed=false));custom=false},{custom=false})
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable private fun CustomConnectorDialog(original:ConnectorSpec?,j:StructuralJoint,vm:SetupViewModel,save:(ConnectorSpec)->Unit,close:()->Unit) {
+    var name by remember{mutableStateOf(original?.name ?: "")};var brand by remember{mutableStateOf(original?.manufacturer ?: "User")}
+    var mass by remember{mutableStateOf(original?.massKg?.times(1000)?.toString() ?: "")}
+    var strength by remember{mutableStateOf((original?.mbsN ?: original?.blN)?.div(1000)?.toString() ?: "")}
+    var term by remember{mutableStateOf(if(original?.blN!=null)"BL" else "MBS")}
+    var category by remember{mutableStateOf(original?.category ?: ConnectorCategory.soft_shackle)}
+    var config by remember{mutableStateOf(original?.ratedConfiguration ?: "")};var source by remember{mutableStateOf(original?.sourceUrl ?: "")}
+    var limitations by remember{mutableStateOf(original?.restrictions ?: "")};var error by remember{mutableStateOf<String?>(null)}
+    AlertDialog(onDismissRequest=close,title={Text("Custom connector · immutable revision")},text={Column(Modifier.heightIn(max=420.dp).then(Modifier),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+        // Fields scroll inside the dialog to work on small displays.
+        androidx.compose.foundation.lazy.LazyColumn {
+            item { OutlinedTextField(name,{name=it},label={Text("Product name")},modifier=Modifier.testTag("custom-connector-name")) }
+            item { OutlinedTextField(brand,{brand=it},label={Text("Manufacturer / user")}) }
+            item { Text("Category");FlowRow { listOf(ConnectorCategory.soft_shackle,ConnectorCategory.oval_maillon).forEach{c->FilterChip(category==c,{category=c},label={Text(c.name.replace('_',' '))})} } }
+            item { FlowRow { listOf(ConnectorCategory.sewn_loop,ConnectorCategory.permanent_serial).forEach{c->FilterChip(category==c,{category=c},label={Text(c.name.replace('_',' '))})} } }
+            if(j.kind==JointKind.weblock_termination)item{FilterChip(category==ConnectorCategory.rigid_anchor_shackle,{category=ConnectorCategory.rigid_anchor_shackle},label={Text("Rigid anchor shackle")})}
+            item { OutlinedTextField(mass,{mass=it},label={Text("Physical mass m/g (blank unknown)")},modifier=Modifier.testTag("custom-connector-mass")) }
+            item { Row { listOf("MBS","BL").forEach{t->FilterChip(term==t,{term=t},label={Text(t)})} };OutlinedTextField(strength,{strength=it},label={Text("Published / user-declared $term/kN (blank unknown)")},modifier=Modifier.testTag("custom-connector-strength")) }
+            item { OutlinedTextField(config,{config=it},label={Text("Exact wrap / size / loading / sewn assembly")},modifier=Modifier.testTag("custom-connector-configuration")) }
+            item { OutlinedTextField(source,{source=it},label={Text("Source URL, test reference or user declaration")},modifier=Modifier.testTag("custom-connector-source")) }
+            item { OutlinedTextField(limitations,{limitations=it},label={Text("Limitations / uncertainty")},modifier=Modifier.testTag("custom-connector-limitations"));Text("User-declared, not manufacturer-verified. For sewing, identify webbing pair/version, seam pattern and direction. Zero extra mass requires a documented already-included mass basis.") }
+            item { error?.let{Text(it,color=MaterialTheme.colorScheme.error)} }
+        }
+    }},confirmButton={TextButton(onClick={try {
+        val m=if(mass.isBlank())null else requireNotNull(mass.number()){ "Enter finite mass" }/1000
+        val f=if(strength.isBlank())null else requireNotNull(strength.number()){ "Enter finite strength" }*1000
+        val s=ConnectorLibrary.custom(name,brand,category,m,f,term,config,source,limitations,original?.id ?: "user:connector:${UUID.randomUUID()}")
+        vm.addCustomConnector(s);save(s)
+    }catch(e:Exception){error=e.message}},modifier=Modifier.testTag("save-custom-connector")){Text("Save new revision")}},dismissButton={TextButton(onClick=close){Text("Cancel")}})
+}

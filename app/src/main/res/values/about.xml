@@ -1,0 +1,19 @@
+<resources>
+    <string name="back_to_about">Back to About</string>
+    <string name="application_information">Application Information</string>
+    <string name="developer_contact_unconfigured">Developer contact has not been configured.</string>
+    <string name="application_libraries">Built with Kotlin, Jetpack Compose and AndroidX. Material source attribution is available in Material Curves → Details.</string>
+    <string name="about_title">About</string>
+    <string name="close_about">Close</string>
+    <string name="about_solver_title">About the Solver</string>
+    <string name="about_solver_description">This app estimates highline webbing deformation and loads using simplified mechanical models, nonlinear material force–elongation relationships and energy conservation. Predictions depend on the selected materials, rig configuration and model assumptions.</string>
+    <string name="about_limitations_title">Model Limitations</string>
+    <string name="about_limitations_validation">The solver has not been experimentally validated. Real mainline failures involve dynamic processes not fully captured by the model. Material force–elongation curves may contain extrapolated regions.</string>
+    <string name="about_limitations_simple">Simple Mode uses fixed material coordinates: no webbing sliding is solved. Friction, connections and other effects may be simplified or omitted. Dynamics is not implemented.</string>
+    <string name="about_limitations_bounds">Calculated maximum sag and forces are theoretical predictions, not guaranteed physical bounds. The tool is not a substitute for appropriate rigging knowledge, engineering judgment or established safety practices.</string>
+    <string name="about_full_safety">Full Safety Information</string>
+    <string name="about_material_collaboration_title">Material Data and Collaboration</string>
+    <string name="about_material_collaboration">Are you a webbing or bungee manufacturer with experimentally measured force–elongation curves?\n\nContributions of verified material data to improve the solver are welcome. Please contact the developer.</string>
+    <string name="application_version">Version %1$s</string>
+    <string name="version_unknown">Unknown</string>
+</resources>

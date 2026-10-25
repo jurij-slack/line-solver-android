@@ -1,0 +1,15 @@
+<resources>
+    <!-- Configure verified developer information here before distribution. Never invent an address. -->
+    <string name="developer_contact" translatable="false"></string>
+    <string name="developer_name" translatable="false"></string>
+    <string name="safety_title">Line Solver — Important Safety Information</string>
+    <string name="safety_intro">This solver uses simplified mechanical models and the principle of energy conservation to estimate webbing stretch and maximum sag following a mainline failure.</string>
+    <string name="safety_estimates">The results are theoretical estimates, not experimentally verified predictions.</string>
+    <string name="safety_real_world">Real-world behavior can differ significantly due to dynamic effects, friction, material variability, connection behavior and other mechanisms not fully represented in the model.</string>
+    <string name="safety_energy">Conservation of energy provides a maximum-deflection estimate within the assumptions of the implemented model. It does not guarantee an absolute upper bound for sag or forces in a real failure event.</string>
+    <string name="safety_decisions">This software does not guarantee that a highline setup is safe and must not be used as the sole basis for rigging or safety decisions.</string>
+    <string name="safety_risk">Highlining involves serious risks of injury or death.</string>
+    <string name="safety_own_risk">Highline at your own risk.</string>
+    <string name="safety_acknowledgment">By selecting Accept and Continue, the user acknowledges these limitations.</string>
+    <string name="safety_accept">Accept and Continue</string>
+</resources>

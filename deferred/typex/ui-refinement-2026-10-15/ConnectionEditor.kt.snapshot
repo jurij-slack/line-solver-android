@@ -1,0 +1,139 @@
+package org.linesolver.base.ui
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
+import org.linesolver.base.model.*
+import java.util.UUID
+
+fun componentLabel(d:Draft,end:ComponentEnd):String {
+    val section=StructuralConnections.sectionIds(d).indexOf(end.instanceId)
+    val bungee=d.bungees?.banks.orEmpty().flatMap{it.assemblies}.indexOfFirst{it.id==end.instanceId}
+    return "${if(section>=0)"Section ${section+1}" else "Bungee ${bungee+1}"} · ${end.cable} · ${end.port}"
+}
+
+@Composable fun ConnectionOverview(d:Draft,vm:SetupViewModel,selectedId:String?=null,onClose:()->Unit) {
+    val labels=remember(d){StructuralConnections.labeled(d)}
+    var query by remember{mutableStateOf("")}
+    var selected by remember(selectedId){mutableStateOf(selectedId)}
+    LaunchedEffect(labels,selected) { if(selected!=null && labels.none{it.joint.id==selected})selected=null }
+    val layout=StructuralConnections.reconcile(d)
+    if(selected==null)AlertDialog(onDismissRequest=onClose,title={Text("Connections")},text={Column {
+        Text("Section boundaries may be continuous webbing or physical splices.",style=MaterialTheme.typography.bodySmall)
+        OutlinedTextField(query,{query=it},label={Text("Search connections or components")},modifier=Modifier.testTag("connection-search"))
+        LazyColumn(Modifier.heightIn(max=360.dp)) {
+            items(labels.filter{l->("${l.label} ${l.joint.kind} ${l.joint.details.typeX?.let{"TypeX ${it.state} ${it.assembly}"} ?: ""} ${l.joint.details.notes} "+l.joint.ends.joinToString{componentLabel(d,it)}).contains(query,true)},key={it.joint.id}) { l ->
+                TextButton(onClick={selected=l.joint.id},modifier=Modifier.fillMaxWidth().testTag("joint-${l.label}")) {
+                    Text("${l.label} · ${l.joint.details.typeX?.let{"TypeX · ${it.state}"} ?: l.joint.kind.name.replace('_',' ')}\n"+l.joint.ends.joinToString(" ↔ "){componentLabel(d,it)})
+                }
+            }
+            items(layout.detached,key={"detached-${it.id}"}) { j ->
+                Column { Text("Detached #${j.id}: ${j.details.notes}. Assignments were retained here; review before discarding.",color=MaterialTheme.colorScheme.error)
+                    TextButton(onClick={vm.edit{it.copy(connections=layout.copy(detached=layout.detached.filterNot{old->old.id==j.id}))}},modifier=Modifier.testTag("discard-detached-${j.id}")){Text("Discard detached record")}}
+            }
+        }
+    }},confirmButton={TextButton(onClick=onClose,modifier=Modifier.testTag("close-connections")){Text("Close")}})
+    labels.firstOrNull{it.joint.id==selected}?.let { l ->
+        ConnectionDialog(d,l,vm,{selected=null})
+    }
+}
+
+fun connectionEndpoints(d:Draft,j:StructuralJoint):String = "Between "+j.ends.map {
+    componentLabel(d,it).substringBefore(" · ")
+}.distinct().joinToString(" and ")
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable private fun ConnectionDialog(d:Draft,l:LabeledJoint,vm:SetupViewModel,close:()->Unit) {
+    val j=l.joint
+    var notes by remember(j.id){mutableStateOf(j.details.notes)}
+    var slots by remember(j.id){mutableStateOf(j.details.hardware)}
+    var seam by remember(j.id){mutableStateOf(j.details.typeX)}
+    var advanced by remember(j.id){mutableStateOf(false)}
+    var seamStrength by remember(j.id){mutableStateOf(j.details.typeX?.strengthN?.div(1000)?.toString() ?: "")}
+    val eligible=StructuralConnections.typeXEligible(d,j.ends,j.kind)
+    val legacyTie=j.declaredCrossLine && j.details.typeX==null
+    val editedJoint=j.copy(declaredCrossLine=j.declaredCrossLine || seam!=null)
+    val missingConnector=slots.any{it.role in listOf(HardwareRole.main,HardwareRole.backup) && it.productId==null && j.details.hardware.none{old->old.id==it.id && old.productId==null}}
+    val invalidStrength=seam!=null && seamStrength.isNotBlank() && seamStrength.number()?.let{it>0}!=true
+    val missingSource=seam!=null && seamStrength.isNotBlank() && (seam!!.assembly.isBlank() || seam!!.source.isBlank())
+    AlertDialog(onDismissRequest=close,title={Text("${l.label} · Connection")},text={
+        Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+            Text(connectionEndpoints(d,j))
+            Text("Connection type",style=MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                FilterChip(seam==null,{seam=null;seamStrength=""},label={Text("Regular")},modifier=Modifier.testTag("connection-regular"))
+                FilterChip(seam!=null,{if(seam==null){seam=TypeXSeam();seamStrength=""}},enabled=eligible,label={Text("TypeX")},modifier=Modifier.testTag("connection-typex"))
+            }
+            if(seam!=null) {
+                Text("Transverse sewing · negligible additional mass",style=MaterialTheme.typography.bodySmall)
+                FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    SeamState.entries.forEach { state -> FilterChip(seam!!.state==state,{seam=seam!!.copy(state=state)},label={Text(if(state==SeamState.intact)"Intact" else "Broken")},modifier=Modifier.testTag("seam-${state.name}")) }
+                }
+                Text("Seam strength: "+(seam!!.strengthN?.let{(if(seam!!.lowerBound)"≥ " else "")+significant(it/1000)+" kN · assembly specific"} ?: "Unknown · assembly specific"))
+                Text("Common node: seam force/release unmodeled; webbing MBS unchanged.",style=MaterialTheme.typography.bodySmall)
+            }
+            if(j.kind==JointKind.weblock_termination)Text("Weblock stop · material cannot pass through.",style=MaterialTheme.typography.bodySmall)
+            for(role in listOf(HardwareRole.main,HardwareRole.backup)) {
+                val own=slots.filter{it.role==role}
+                val legacy=slots.any{it.role in listOf(HardwareRole.shared,HardwareRole.unspecified)}
+                Text(if(role==HardwareRole.main)"Main connection" else "Backup connection",style=MaterialTheme.typography.titleSmall)
+                FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    FilterChip(own.isEmpty() && !legacy,{if(legacy)advanced=true else slots=slots.filterNot{it.role==role}},label={Text("Continuous webbing")},modifier=Modifier.testTag("continuous-${role.name}"))
+                    FilterChip(own.isNotEmpty(),{if(own.isEmpty())slots=slots+HardwareItem(UUID.randomUUID().toString(),role=role)},label={Text("Connectors")},modifier=Modifier.testTag("spliced-${role.name}"))
+                }
+                own.forEach { h ->
+                    ConnectorFields(h,editedJoint.copy(declaredCrossLine=false),vm,advanced=false,onRemove={slots=slots.filterNot{it.id==h.id}}){changed->slots=slots.map{if(it.id==h.id)changed else it}}
+                }
+                if(own.isNotEmpty())TextButton(onClick={slots=slots+HardwareItem(UUID.randomUUID().toString(),role=role)},modifier=Modifier.testTag("add-${role.name}-connector")){Text("Add connector")}
+            }
+            if(missingConnector)Text("Choose a specification for each Main / Backup connector, or select Continuous webbing.",color=MaterialTheme.colorScheme.error)
+            if(slots.any{it.role in listOf(HardwareRole.shared,HardwareRole.unspecified)})Text("Shared / legacy hardware retained — review in Advanced details.",style=MaterialTheme.typography.bodySmall)
+            TextButton(onClick={advanced=!advanced},modifier=Modifier.testTag("connection-advanced")){Text(if(advanced)"Hide advanced details" else "Advanced details")}
+            if(advanced) {
+                Text("Stable ID: ${j.id}",modifier=Modifier.testTag("joint-stable-id"))
+                Text("Topology: ${j.kind.name.replace('_',' ')} · common node")
+                j.ends.forEach{Text(componentLabel(d,it))}
+                Text("Section splits do not imply a physical cut. Hardware load assumptions never disconnect main or backup. Ratings are never summed.",style=MaterialTheme.typography.bodySmall)
+                if(legacyTie)Text("Existing structural tie retained independently of TypeX.")
+                OutlinedTextField(notes,{notes=it},label={Text("Connection notes")},modifier=Modifier.testTag("connection-notes"))
+                seam?.let { current ->
+                    OutlinedTextField(current.assembly,{seam=seam!!.copy(assembly=it)},label={Text("Manufacturer / exact sewn assembly")})
+                    OutlinedTextField(current.source,{seam=seam!!.copy(source=it)},label={Text("Seam source / test reference")})
+                    OutlinedTextField(seamStrength,{seamStrength=it;seam=seam!!.copy(strengthN=it.number()?.takeIf{n->n>0}?.times(1000))},label={Text("Seam strength/kN (blank unknown)")},isError=invalidStrength || missingSource)
+                    if(invalidStrength || missingSource)Text("Enter a positive seam strength with its exact assembly and source, or leave strength blank.",color=MaterialTheme.colorScheme.error)
+                    FlowRow { FilterChip(current.lowerBound,{seam=seam!!.copy(lowerBound=!current.lowerBound)},label={Text("Published lower bound")}) }
+                    Text("Slacktivity publishes 12+ kN for its documented pinkTube / LSDTube Type-X assembly. This is a lower bound, not a universal failure threshold. No longitudinal-tension seam failure or stitching damage is modeled.",style=MaterialTheme.typography.bodySmall)
+                    TextButton(onClick={seam=current.copy(assembly="Slacktivity pinkTube / LSDTube Type-X manufacturer assembly",source="https://slacktivity.com/shop/type-x-highline-webbing/",strengthN=12000.0,lowerBound=true);seamStrength="12"},modifier=Modifier.testTag("seam-published-bound")){Text("Use documented assembly lower bound")}
+                }
+                slots.forEachIndexed { i,h ->
+                    HorizontalDivider()
+                    Text("Item ${i+1} · #${h.id}")
+                    if(h.attachmentPorts.isNotEmpty())Text("Assigned ports: "+h.attachmentPorts.joinToString{componentLabel(d,it)})
+                    ConnectorFields(h,editedJoint,vm){changed->slots=slots.map{if(it.id==h.id)changed else it}}
+                    OutlinedTextField(h.configuration,{text->slots=slots.map{if(it.id==h.id)it.copy(configuration=text) else it}},label={Text("Configuration notes")})
+                    TextButton(onClick={slots=slots.filterNot{it.id==h.id}}){Text("Remove slot ${i+1}")}
+                }
+                TextButton(onClick={
+                    val shackle=ConnectorLibrary.shipped.products.single{it.id=="bc_4mm_soft_double_wrap"}
+                    val protection=ConnectorLibrary.shipped.products.single{it.id=="bc_2x4_protection_pack"}
+                    slots=slots+listOf(ConnectorLibrary.item(shackle).copy(role=HardwareRole.shared),ConnectorLibrary.item(shackle).copy(role=HardwareRole.shared),ConnectorLibrary.item(protection))
+                },modifier=Modifier.testTag("add-2x4-kit")){Text("Add verified 2×4 mm kit · 36 g total")}
+                TextButton(onClick={slots=slots+HardwareItem(UUID.randomUUID().toString())},modifier=Modifier.testTag("add-hardware-slot")){Text("Add empty hardware slot")}
+            }
+        }
+    },confirmButton={TextButton(onClick={
+        vm.edit { rig ->
+            val current=StructuralConnections.reconcile(rig)
+            val cross=j.declaredCrossLine
+            rig.copy(connections=current.copy(joints=current.joints.map{old->if(old.id==j.id)old.copy(details=old.details.copy(notes=notes,hardware=slots,typeX=seam),declaredCrossLine=cross,
+                kind=if(cross)JointKind.explicit_cross_line else StructuralConnections.interfaces(rig).single{it.ends.toSet()==old.ends.toSet()}.kind) else old}))
+        };close()
+    },enabled=!invalidStrength && !missingSource && !missingConnector,modifier=Modifier.testTag("save-connection")){Text("Save")}},dismissButton={TextButton(onClick=close){Text("Cancel")}})
+}

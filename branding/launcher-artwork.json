@@ -1,0 +1,20 @@
+{
+  "source_sha256": "9cfce4ec582ddeb7e491fe05324bdd79629da62c49b2c4b434e6da84d3df0f23",
+  "source_pixels": [
+    1254,
+    1254
+  ],
+  "adaptive_layer_dp": 108,
+  "uniform_artwork_dp": 72,
+  "foreground_pixels": 648,
+  "source_background_extension_inset_px": 116,
+  "critical_color_max_radius_dp": 29.727699391495317,
+  "safe_radius_dp": 33,
+  "legacy_pixel_sizes": [
+    48,
+    72,
+    96,
+    144,
+    192
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "method": "Fixed material-coordinate subset of Python network/energy model; no sliding solver called",
+  "files": {
+    "src/line_solver/materials.py": "e9dba61161af04cb74dd3c6bf4400ccb5dbd8b5cba82ee8a1a09be5daa151d7c",
+    "src/line_solver/material_library.py": "51cc264f12572947c231f2160c9ca2aade5467dcd2a9206860512a82a8c10649",
+    "src/line_solver/rig.py": "0a95fb773e0e53302a0183ab4042eff6b19faa7e9d35582926b591bc9383cc33",
+    "src/line_solver/rig_solver.py": "d71f1e1d8e89cc7968983431f78bcca9fbb3515178fa9bd39a1a93c6bbf22c9d",
+    "src/line_solver/network.py": "1966a1ab0ef74020932e4ce328a41d152df6781714161ddb71bcf888fd7d1904",
+    "src/line_solver/failure.py": "1c3d63a998d60b77bea042dfe67522c8546c9f219770aed8a69ae9cea7dadd66",
+    "src/line_solver/meshing.py": "c6ed584f6e197d25f6de984d8ee99573c7d1050a0a3422f8a29b7280b56f17ad",
+    "src/line_solver/highliner.py": "896175536736ed9025a5404854262b15814dab98f41ab1d2891815ef5c87cf5e",
+    "data/materials/webbing_material_models_v1.json": "34fb52a2b2d5ee13f1d0585509825d82cad86a9f22b8c8f8439933d465c280c1"
+  }
+}

@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Line Solver</string>
+    <string name="segment_failure_hint">Tap a mainline segment to simulate a failure in that section.</string>
+    <string name="webbing_data_acknowledgement_title">Webbing Data Acknowledgement</string>
+    <string name="webbing_data_acknowledgement">Line Solver uses material data sourced in part from SlackData, the open gear database maintained by the International Slackline Association (ISA).</string>
+    <string name="webbing_data_no_endorsement">This contribution is gratefully acknowledged. The use of ISA data does not imply ISA certification or endorsement of the simulation results.</string>
+    <string name="data_sources_licensing_title">Data Sources and Licensing</string>
+    <string name="isa_slackdata_title">ISA SlackData</string>
+    <string name="isa_slackdata_description">Selected webbing material specifications used by Line Solver are sourced from SlackData, the open gear database maintained by the International Slackline Association (ISA).</string>
+    <string name="isa_slackdata_license">The SlackData gear catalogue is licensed under Creative Commons Attribution–ShareAlike 4.0 International (CC BY-SA 4.0).</string>
+    <string name="isa_other_sources">Line Solver additionally uses material information from other sources and independently constructed constitutive models.</string>
+    <string name="isa_license_scope">The CC BY-SA 4.0 license applies to the covered SlackData catalogue data and relevant adaptations, not automatically to the entire Line Solver application.</string>
+    <string name="isa_modifications">Catalogue adaptations include SI-unit conversion, record reconciliation and model classification. Original source metadata and modification tracking are retained. Covered catalogue adaptations are distributed under CC BY-SA 4.0.</string>
+    <string name="isa_repository_label">SlackData repository</string>
+    <string name="isa_data_license_label">SlackData data license</string>
+    <string name="isa_cc_license_label">Creative Commons license</string>
+    <string name="isa_repository_url" translatable="false">https://github.com/International-Slackline-Association/SlackData</string>
+    <string name="isa_data_license_url" translatable="false">https://github.com/International-Slackline-Association/SlackData/blob/main/LICENSE-DATA</string>
+    <string name="isa_cc_license_url" translatable="false">https://creativecommons.org/licenses/by-sa/4.0/</string>
+</resources>

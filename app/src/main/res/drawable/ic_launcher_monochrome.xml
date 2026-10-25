@@ -1,0 +1,9 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Geometry traced from the supplied raster; source coordinate system retained. -->
+    <group android:scaleX="0.0574162679" android:scaleY="0.0574162679" android:translateX="18" android:translateY="18">
+        <path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="22" android:strokeLineCap="round" android:pathData="M201,488 C374,641 532,668 636,668 C805,669 962,589 1051,488" />
+        <path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="14" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M201,489 C285,705 366,766 493,655 C572,839 670,839 756,655 C884,766 970,706 1051,489" />
+        <path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="18" android:pathData="M174,439 A29,29 0,1 1,174 497 A29,29 0,1 1,174 439 M1078,439 A29,29 0,1 1,1078 497 A29,29 0,1 1,1078 439" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M634,494 A18,18 0,1 1,634 530 A18,18 0,1 1,634 494 M616,538 Q628,535 640,540 L662,558 L685,568 Q695,573 688,581 Q685,587 677,584 L655,575 L644,568 L633,597 L648,620 L659,646 Q664,658 654,660 Q647,663 642,652 L631,630 L619,616 L608,639 L594,655 Q585,662 579,655 Q575,649 582,641 L600,616 L607,593 L612,562 L586,576 Q575,582 570,574 Q565,566 575,559 L605,544 Z" />
+    </group>
+</vector>

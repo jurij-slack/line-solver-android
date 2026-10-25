@@ -1,0 +1,101 @@
+package org.linesolver.base.ui
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
+import org.linesolver.base.model.*
+import java.util.UUID
+
+fun componentLabel(d:Draft,end:ComponentEnd):String {
+    val section=StructuralConnections.sectionIds(d).indexOf(end.instanceId)
+    val bungee=d.bungees?.banks.orEmpty().flatMap{it.assemblies}.indexOfFirst{it.id==end.instanceId}
+    return "${if(section>=0)"Section ${section+1}" else "Bungee ${bungee+1}"} · ${end.cable} · ${end.port}"
+}
+
+@Composable fun ConnectionOverview(d:Draft,vm:SetupViewModel,selectedId:String?=null,onClose:()->Unit) {
+    val labels=remember(d){StructuralConnections.labeled(d).filter{it.joint.kind!=JointKind.anchor}}
+    var query by remember{mutableStateOf("")}
+    var selected by remember(selectedId){mutableStateOf(selectedId?.takeIf{id->labels.any{it.joint.id==id}})}
+    LaunchedEffect(labels,selected) { if(selected!=null && labels.none{it.joint.id==selected})selected=null }
+    val layout=StructuralConnections.reconcile(d)
+    if(selected==null)AlertDialog(onDismissRequest=onClose,title={Text("Connections")},text={Column {
+        Text("Main and Backup require independently specified connectors. Anchors are ideal, non-failing boundaries.",style=MaterialTheme.typography.bodySmall)
+        if(d.hasInactiveConnectionMetadata())Text(CONNECTION_COMPATIBILITY_WARNING,style=MaterialTheme.typography.bodySmall)
+        OutlinedTextField(query,{query=it},label={Text("Search connections or components")},modifier=Modifier.fillMaxWidth().testTag("connection-search"))
+        LazyColumn(Modifier.heightIn(max=360.dp)) {
+            items(labels.filter{connectionOverviewLabel(d,it).contains(query,true)},key={it.joint.id}) { l ->
+                TextButton(onClick={selected=l.joint.id},modifier=Modifier.fillMaxWidth().testTag("joint-${l.label}")) {
+                    Text(connectionOverviewLabel(d,l))
+                }
+            }
+            items(layout.detached,key={"detached-${it.id}"}) { j ->
+                Column {
+                    Text("Detached connection retained for compatibility.",style=MaterialTheme.typography.bodySmall)
+                    if(!j.hasInactiveConnectionMetadata())TextButton(onClick={vm.edit{it.copy(connections=layout.copy(detached=layout.detached.filterNot{old->old.id==j.id}))}},modifier=Modifier.testTag("discard-detached-${j.id}")){Text("Discard detached record")}
+                }
+            }
+        }
+    }},confirmButton={TextButton(onClick=onClose,modifier=Modifier.testTag("close-connections")){Text("Close")}})
+    labels.firstOrNull{it.joint.id==selected}?.let { l -> ConnectionDialog(d,l,vm,{selected=null}) }
+}
+
+fun connectionEndpoints(d:Draft,j:StructuralJoint)="Between "+connectionComponentNames(d,j).joinToString(" and ")
+
+@Composable private fun ConnectionDialog(d:Draft,l:LabeledJoint,vm:SetupViewModel,close:()->Unit) {
+    val j=l.joint
+    var notes by remember(j.id){mutableStateOf(j.details.notes)}
+    var slots by remember(j.id){mutableStateOf(j.details.hardware)}
+    var advanced by remember(j.id){mutableStateOf(false)}
+    val active=regularConnectorItems(j.copy(details=j.details.copy(hardware=slots)))
+    AlertDialog(onDismissRequest=close,title={Text("${l.label} · Connection")},text={
+        Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+            Text(connectionEndpoints(d,j))
+            if(j.hasInactiveConnectionMetadata())Text(CONNECTION_COMPATIBILITY_WARNING,style=MaterialTheme.typography.bodySmall)
+            if(j.kind==JointKind.weblock_termination)Text("Weblock stop · material cannot pass through.",style=MaterialTheme.typography.bodySmall)
+            for(role in listOf(HardwareRole.main,HardwareRole.backup)) {
+                val own=active.filter{it.role==role}
+                Text(if(role==HardwareRole.main)"Main connection" else "Backup connection",style=MaterialTheme.typography.titleSmall)
+                if(own.isEmpty())Text("Connector configuration unresolved",modifier=Modifier.testTag("unresolved-${role.name}"))
+                own.forEach { h ->
+                    ConnectorFields(h,j,vm,advanced=false,onRemove={slots=slots.filterNot{it.id==h.id}}){changed->slots=slots.map{if(it.id==h.id)changed else it}}
+                }
+                TextButton(onClick={slots=slots+HardwareItem(UUID.randomUUID().toString(),role=role)},modifier=Modifier.testTag("add-${role.name}-connector")){Text("Add connector")}
+            }
+            Text("Unspecified connectors remain unresolved; no mass or strength is inferred. Individual load sharing is not solved.",style=MaterialTheme.typography.bodySmall)
+            if(active.any{it.role in listOf(HardwareRole.shared,HardwareRole.unspecified)})Text("Shared / legacy hardware retained — review in Advanced details.",style=MaterialTheme.typography.bodySmall)
+            TextButton(onClick={advanced=!advanced},modifier=Modifier.testTag("connection-advanced")){Text(if(advanced)"Hide advanced details" else "Advanced details")}
+            if(advanced) {
+                Text("Stable ID: ${j.id}",modifier=Modifier.testTag("joint-stable-id"))
+                j.ends.forEach{Text(componentLabel(d,it))}
+                Text("Hardware load assumptions never disconnect main or backup. Ratings are never summed.",style=MaterialTheme.typography.bodySmall)
+                // Unsupported configuration notes remain stored, without surfacing inactive editing controls.
+                if(!j.hasInactiveConnectionMetadata())OutlinedTextField(notes,{notes=it},label={Text("Connection notes")},modifier=Modifier.testTag("connection-notes"))
+                active.forEachIndexed { i,h ->
+                    HorizontalDivider()
+                    Text("Item ${i+1}")
+                    ConnectorFields(h,j,vm){changed->slots=slots.map{if(it.id==h.id)changed else it}}
+                    OutlinedTextField(h.configuration,{text->slots=slots.map{if(it.id==h.id)it.copy(configuration=text) else it}},label={Text("Configuration notes")})
+                    TextButton(onClick={slots=slots.filterNot{it.id==h.id}}){Text("Remove slot ${i+1}")}
+                }
+                TextButton(onClick={
+                    val shackle=ConnectorLibrary.shipped.products.single{it.id=="bc_4mm_soft_double_wrap"}
+                    val protection=ConnectorLibrary.shipped.products.single{it.id=="bc_2x4_protection_pack"}
+                    slots=slots+listOf(ConnectorLibrary.item(shackle).copy(role=HardwareRole.shared),ConnectorLibrary.item(shackle).copy(role=HardwareRole.shared),ConnectorLibrary.item(protection))
+                },modifier=Modifier.testTag("add-2x4-kit")){Text("Add verified 2×4 mm kit · 36 g total")}
+                TextButton(onClick={slots=slots+HardwareItem(UUID.randomUUID().toString())},modifier=Modifier.testTag("add-hardware-slot")){Text("Add empty hardware slot")}
+            }
+        }
+    },confirmButton={TextButton(onClick={
+        vm.edit { rig ->
+            val current=StructuralConnections.reconcile(rig)
+            rig.copy(connections=current.copy(joints=current.joints.map{old->if(old.id==j.id)old.copy(details=old.details.copy(notes=notes,hardware=slots)) else old}))
+        };close()
+    },modifier=Modifier.testTag("save-connection")){Text("Save")}},dismissButton={TextButton(onClick=close){Text("Cancel")}})
+}
