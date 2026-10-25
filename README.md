@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="assets/line-solver-banner.png"
+       alt="Line Solver – Android highline mechanics"
+       width="100%">
+</p>
+
 # Line Solver
 
 **Line Solver** is a native Android application for exploring the mechanics of slackline and highline rigs. It combines a nonlinear, material-aware line solver with an interactive rig editor, a webbing catalogue, and saved configurations.
